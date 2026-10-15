@@ -1,0 +1,7 @@
+{
+  "pollMs": 5000,
+  "replies": {
+    "allowedSenderIds": [],
+    "cliTimeoutMs": 1800000
+  }
+}

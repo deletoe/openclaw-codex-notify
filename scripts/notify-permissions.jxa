@@ -1,0 +1,70 @@
+// Public macOS permission APIs only. Run through the SAME authorized executor
+// as subsequent osascript/JXA operations; this script never types or clicks.
+ObjC.import('AppKit');
+ObjC.import('ApplicationServices');
+ObjC.import('CoreServices');
+ObjC.bindFunction('AEDeterminePermissionToAutomateTarget', ['int', ['void *', 'unsigned int', 'unsigned int', 'bool']]);
+
+function automationState(code) {
+  return code === 0 ? 'granted' : code === -1743 ? 'denied' : code === -1744 ? 'consent_required' : code === -600 ? 'target_not_running' : 'unknown';
+}
+function run(argv) {
+  var request = argv.indexOf('--request') >= 0;
+  var verify = argv.indexOf('--verify') >= 0;
+  if (argv.some(function (arg) { return arg !== '--request' && arg !== '--verify'; })) throw new Error('Unsupported permission option');
+  var targetId = 'com.openai.codex';
+  var apps = $.NSRunningApplication.runningApplicationsWithBundleIdentifier(targetId);
+  var target = { bundleId: targetId, runningCount: Number(apps.count) };
+  if (target.runningCount === 1) {
+    var app = apps.objectAtIndex(0);
+    target.pid = Number(app.processIdentifier);
+    target.processName = ObjC.unwrap(app.localizedName);
+  }
+  var descriptor = $.NSAppleEventDescriptor.descriptorWithBundleIdentifier('com.apple.systemevents');
+  function automation(ask) { return Number($.AEDeterminePermissionToAutomateTarget(descriptor.aeDesc, 0x2a2a2a2a, 0x2a2a2a2a, ask)); }
+  var code = automation(false);
+  var trusted = Boolean($.AXIsProcessTrusted());
+  var result = {
+    target: target, accessibility: trusted ? 'granted' : 'not_granted',
+    automation: { targetBundleId: 'com.apple.systemevents', state: automationState(code), osStatus: code },
+    requestAttempted: [], uiProbe: { state: 'not_requested' },
+    screenRecording: 'not_required_for_ax_only', inputAttempted: false
+  };
+  // A known denial stops this run; the user must change it in System Settings.
+  if (code === -1743) { result.uiProbe.state = 'blocked'; return JSON.stringify(result); }
+  if (request && !trusted) {
+    result.requestAttempted.push('accessibility');
+    trusted = Boolean($.AXIsProcessTrustedWithOptions($({ AXTrustedCheckOptionPrompt: true })));
+    result.accessibility = trusted ? 'granted' : 'not_granted';
+  }
+  if (request && code === -1744) {
+    result.requestAttempted.push('automation');
+    code = automation(true);
+    result.automation = { targetBundleId: 'com.apple.systemevents', state: automationState(code), osStatus: code };
+  }
+  // AX prompts are asynchronous. Recheck, do not equate "prompt shown" to consent.
+  result.accessibility = Boolean($.AXIsProcessTrusted()) ? 'granted' : 'not_granted';
+  if (verify) {
+    result.uiProbe.state = 'blocked';
+    if (result.accessibility === 'granted' && code === 0 && target.runningCount === 1) {
+      try {
+        var events = Application('com.apple.systemevents');
+        var matches = events.processes.whose({ bundleIdentifier: targetId })();
+        if (matches.length !== 1 || Number(matches[0].unixId()) !== target.pid) throw new Error('Target identity changed');
+        var windows = matches[0].windows();
+        result.uiProbe.windowCount = windows.length;
+        // Read window structure only; never export titles, chat content or drafts.
+        var usable = false;
+        for (var i = 0; i < windows.length; i++) {
+          var role = windows[i].role();
+          var size = windows[i].size();
+          if (role === 'AXWindow' && size.length === 2 && size[0] > 0 && size[1] > 0) usable = true;
+        }
+        result.uiProbe.state = usable ? 'verified_read_only' : 'no_usable_window';
+      } catch (error) {
+        result.uiProbe = { state: 'failed', error: String(error) };
+      }
+    }
+  }
+  return JSON.stringify(result);
+}

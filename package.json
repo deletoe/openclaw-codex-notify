@@ -1,0 +1,68 @@
+{
+  "name": "openclaw-codex-notify",
+  "version": "0.3.3",
+  "description": "OpenClaw CLI plugin and macOS collector for unhandled local Codex session reminders",
+  "type": "module",
+  "engines": {
+    "node": ">=24.16.0"
+  },
+  "bin": {
+    "codex-notify": "./bin.mjs"
+  },
+  "files": [
+    "index.mjs",
+    "cli.mjs",
+    "bin.mjs",
+    "openclaw.plugin.json",
+    "npm-shrinkwrap.json",
+    "README.md",
+    "src/",
+    "scripts/",
+    "docs/",
+    "skills/",
+    "README.zh-CN.md",
+    "LICENSE",
+    "SECURITY.md",
+    "examples/"
+  ],
+  "dependencies": {
+    "@openclaw/gateway-client": "2026.8.1",
+    "@openclaw/gateway-protocol": "2026.8.1"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.10.3"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.mjs"
+    ],
+    "compat": {
+      "pluginApi": ">=2026.10.3"
+    },
+    "install": {
+      "minHostVersion": ">=2026.10.3"
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deletoe/openclaw-codex-notify.git"
+  },
+  "homepage": "https://github.com/deletoe/openclaw-codex-notify",
+  "bugs": {
+    "url": "https://github.com/deletoe/openclaw-codex-notify/issues"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "audit:public": "node scripts/audit-public.mjs",
+    "build": "node scripts/build-release.mjs"
+  },
+  "devDependencies": {
+    "ws": "8.21.3"
+  }
+}

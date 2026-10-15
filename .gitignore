@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.local/
+.DS_Store
+*.log
+*.sqlite
+*.sqlite-*
+*.db
+*.pem
+*.key
+.env
+.env.*
+operator.json
+pairing.json
+gateway.json
+config.json
+health.json

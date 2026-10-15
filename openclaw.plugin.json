@@ -1,0 +1,35 @@
+{
+  "id": "codex-notify",
+  "name": "Codex Notify",
+  "version": "0.3.3",
+  "description": "Codex reminders and source-aware replies with verified delivery: CLI resume or authorized App UI automation.",
+  "skills": [
+    "./skills"
+  ],
+  "categories": [
+    "infrastructure"
+  ],
+  "cliCommands": [
+    {
+      "name": "codex-notify",
+      "description": "Manage local Codex timeout reminders",
+      "hasSubcommands": true
+    }
+  ],
+  "activation": {
+    "onStartup": false,
+    "onCommands": [
+      "codex-notify"
+    ]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "configPath": {
+        "type": "string",
+        "description": "Optional absolute path to an existing collector configuration"
+      }
+    }
+  }
+}
